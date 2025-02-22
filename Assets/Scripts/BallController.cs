@@ -27,9 +27,17 @@ public class BallController : MonoBehaviour
     private Vector2 movementInput;
     private bool isRecoveringScale;
     private List<RaycastHit> groundHits = new List<RaycastHit>();
+    
+    [Header("Ground Check")]
+    public LayerMask groundLayers; 
+    public float checkDistance = 0.2f;
+    public Vector3 checkOrigin = Vector3.zero;
+    private string currentSurfaceTag = "Untagged";
+    private string previousSurfaceTag = "Untagged";
 
-    private Action didJump;
-    private bool didJustJump;
+    [Header("Water Stuff")] 
+    public ParticleSystem enterWater;
+    public ParticleSystem rollingInWater;
 
     private void Awake()
     {
@@ -44,22 +52,6 @@ public class BallController : MonoBehaviour
         ballInput.PogoControls.Jump.canceled += OnJumpCanceled;
         ballInput.PogoControls.Move.performed += OnMovementPerformed;
         ballInput.PogoControls.Move.canceled += OnMovementCanceled;
-
-        didJump += SetJustJumped;
-    }
-
-    void SetJustJumped()
-    {
-        StartCoroutine(OnDidJustJump(0.1f));
-    }
-
-    IEnumerator OnDidJustJump(float time)
-    {
-        didJustJump = true;
-        Debug.Log(true);
-        yield return new WaitForSeconds(time);
-        Debug.Log(false);
-        didJustJump = false;
     }
 
     private void OnEnable() => ballInput.Enable();
@@ -68,11 +60,62 @@ public class BallController : MonoBehaviour
     private void Update()
     {
         HandleMovement();
-        //HandleBallOnMovingPlatform();
         HandleScaleSquish();
         HandleScaleRecovery();
         HandleAirborne();
-        //HandleDrag();
+        GetObjectBallStandingOn();
+        WaterEffects();
+    }
+
+    private void WaterEffects()
+    {
+        if (currentSurfaceTag == "Water" && previousSurfaceTag != "Water")
+        {
+            if(!enterWater.isPlaying) enterWater.Play();
+        }
+
+        if (currentSurfaceTag == "Water")
+        {
+            Vector3 movement = new Vector3(movementInput.x, 0f, movementInput.y).normalized;
+            if (movement.magnitude > 0.1f)
+            {
+                if (!rollingInWater.isPlaying)
+                {
+                    rollingInWater.Play();
+                }
+            }
+            else
+            {
+                if (rollingInWater.isPlaying)
+                {
+                    rollingInWater.Stop();
+                }
+            }
+        }
+        else
+        {
+            rollingInWater.Stop();
+        }
+    }
+
+    private void GetObjectBallStandingOn()
+    {
+        RaycastHit hit;
+        Vector3 rayOrigin = new Vector3(transform.position.x, transform.position.y, transform.position.z) - checkOrigin;
+        Vector3 rayDirection = Vector3.down;
+
+        // Draw a black debug ray in Scene View
+        Debug.DrawRay(rayOrigin, rayDirection * checkDistance, Color.black);
+
+        if (Physics.Raycast(rayOrigin, rayDirection, out hit, checkDistance, groundLayers))
+        {
+            previousSurfaceTag = currentSurfaceTag;
+            currentSurfaceTag = hit.collider.tag;
+        }
+        else
+        {
+            currentSurfaceTag = "Untagged";
+        }
     }
 
     private void HandleMovement()
@@ -92,16 +135,6 @@ public class BallController : MonoBehaviour
             Vector3 torqueAxis = Vector3.Cross(Vector3.up, moveDir);  
             float controlFactor = IsGrounded() ? 1f : airControlFactor;
             rb.AddTorque(torqueAxis * (moveForce * controlFactor), ForceMode.Impulse);
-        }
-    }
-
-    private void HandleBallOnMovingPlatform()
-    {
-        if (currentPlatform != null)// && !didJustJump)
-        {
-            ObjectMovementController platformController = currentPlatform.GetComponent<ObjectMovementController>();
-            rb.velocity += platformController.Velocity * Time.deltaTime;
-
         }
     }
 
@@ -136,12 +169,6 @@ public class BallController : MonoBehaviour
         }
     }
 
-    private void HandleDrag()
-    {
-        rb.drag = IsGrounded() ? 1f : 0f;
-        rb.angularDrag = IsGrounded() ? 1f : 0.05f;
-    }
-
     private void Jump()
     {
         if (IsGrounded())
@@ -170,16 +197,13 @@ public class BallController : MonoBehaviour
             }
 
             rb.AddForce(jumpDirection, ForceMode.Impulse);
-            didJump.Invoke();
         }
     }
-    
-    
     
     private bool IsGrounded()
     {
         groundHits.Clear();
-        int rayCount = 20; // Antall stråler
+        int rayCount = 40; // Antall stråler
         float radius = 3f;
 
         // Fibonacci-sfærisk fordeling for jevnt fordelte punkter på en kule
