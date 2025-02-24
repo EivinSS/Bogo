@@ -1,7 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -45,6 +42,9 @@ public class BallController : MonoBehaviour
 
     [Header("Water Stuff")] 
     public ParticleSystem enterWater;
+    public ParticleSystem enterWater2;
+    public ParticleSystem enterWater3;
+    
     public ParticleSystem rollingInWater;
 
     private void Awake()
@@ -179,7 +179,24 @@ public class BallController : MonoBehaviour
     {
         if (currentSurfaceTag == "Water" && previousSurfaceTag != "Water")
         {
-            if(!enterWater.isPlaying) enterWater.Play();
+            if (enterWater.isPlaying)
+            {
+                if (enterWater2.isPlaying)
+                {
+                    if (!enterWater3.isPlaying)
+                    {
+                        enterWater3.Play();
+                    }
+                }
+                else
+                {
+                    enterWater2.Play();
+                }
+            }
+            else
+            {
+                enterWater.Play();
+            }
         }
 
         if (currentSurfaceTag == "Water")
