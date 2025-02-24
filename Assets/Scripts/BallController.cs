@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -18,9 +19,14 @@ public class BallController : MonoBehaviour
     public float minJumpForce = 30f;
     public float maxJumpForce = 100f;
     public Vector3 originalScale;
+    public float ropeHangForce = 10f;
 
     private bool isFreeLooking = false;
     public FreeLookCamera freeLookCamera;
+
+    [Header("Rope")]
+    private bool isAttachedToRope = false;
+    public RopeVisual ropeVisual;
     
     private Rigidbody rb;
     private bool isChargingJump;
@@ -63,6 +69,7 @@ public class BallController : MonoBehaviour
     private void Update()
     {
         HandleMovement();
+        HandleRopeMovement();
         HandleScaleSquish();
         HandleScaleRecovery();
         HandleAirborne();
@@ -76,6 +83,8 @@ public class BallController : MonoBehaviour
         {
             return;
         }
+        
+        if (isAttachedToRope) return;
         
         Vector3 direction = new Vector3(movementInput.x, 0f, movementInput.y).normalized;
         if (direction.magnitude >= 0.1f)
@@ -92,6 +101,31 @@ public class BallController : MonoBehaviour
             Vector3 torqueAxis = Vector3.Cross(Vector3.up, moveDir);  
             float controlFactor = IsGrounded() ? 1f : airControlFactor;
             rb.AddTorque(torqueAxis * (moveForce * controlFactor), ForceMode.Impulse);
+        }
+    }
+
+    private void HandleRopeMovement()
+    {
+        if (isFreeLooking)
+        {
+            return;
+        }
+        
+        if(!isAttachedToRope) return;
+
+        Vector3 direction = new Vector3(movementInput.x, 0f, movementInput.y).normalized;
+        if (direction.magnitude >= 0.1f)
+        {
+            Vector3 cameraForward = cameraTransform.forward;
+            cameraForward.y = 0f;
+            cameraForward.Normalize();
+
+            Vector3 cameraRight = cameraTransform.right;
+            cameraRight.y = 0f;
+            cameraRight.Normalize();
+
+            Vector3 moveDir = direction.z * cameraForward + direction.x * cameraRight;
+            rb.AddForce(moveDir * ropeHangForce, ForceMode.Force);
         }
     }
     private void HandleScaleSquish()
@@ -174,6 +208,8 @@ public class BallController : MonoBehaviour
     
     private void Jump()
     {
+        if (isFreeLooking) return;
+        
         if (IsGrounded())
         {
             Vector3 combinedNormal = Vector3.zero;
@@ -223,11 +259,25 @@ public class BallController : MonoBehaviour
     
     private void OnJumpStarted(InputAction.CallbackContext context)
     {
+        if (isFreeLooking) return;
+        if (isAttachedToRope) return;
         isChargingJump = true;
         squishStartTime = Time.time;
     }
     private void OnJumpCanceled(InputAction.CallbackContext context)
     {
+        if (isFreeLooking) return;
+        if (isAttachedToRope)
+        {
+            isAttachedToRope = !isAttachedToRope;
+            if (gameObject.GetComponent<SpringJoint>() != null)
+            {
+                Destroy(gameObject.GetComponent<SpringJoint>());
+            }
+            
+            ropeVisual.RemovePlayerFromRopeVisual();
+        }
+        
         if (isChargingJump)
         {
             if (IsGrounded())
@@ -238,6 +288,43 @@ public class BallController : MonoBehaviour
             isRecoveringScale = true;
         }
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("LastRopeModule"))
+        {
+            if(gameObject.GetComponent<SpringJoint>() != null) return;
+            
+            ropeVisual.AddPlayerToRopeVisual();
+            isAttachedToRope = true;
+            // Get the Spring Joint component from the last module
+            SpringJoint lastModuleSpringJoint = other.GetComponent<SpringJoint>();
+
+            // Add a Spring Joint component to the ball
+            SpringJoint ballSpringJoint = gameObject.AddComponent<SpringJoint>();
+            ballSpringJoint.connectedBody = other.gameObject.GetComponent<Rigidbody>();
+
+            // Copy all the settings from the last module's Spring Joint to the ball's Spring Joint
+            if (lastModuleSpringJoint != null)
+            {
+                ballSpringJoint.autoConfigureConnectedAnchor = false;
+                ballSpringJoint.anchor = lastModuleSpringJoint.anchor;
+                ballSpringJoint.connectedAnchor = lastModuleSpringJoint.connectedAnchor;
+                ballSpringJoint.spring = lastModuleSpringJoint.spring;
+                ballSpringJoint.damper = lastModuleSpringJoint.damper;
+                ballSpringJoint.minDistance = lastModuleSpringJoint.minDistance;
+                ballSpringJoint.maxDistance = lastModuleSpringJoint.maxDistance;
+                ballSpringJoint.tolerance = lastModuleSpringJoint.tolerance;
+                ballSpringJoint.breakForce = lastModuleSpringJoint.breakForce;
+                ballSpringJoint.breakTorque = lastModuleSpringJoint.breakTorque;
+                ballSpringJoint.enableCollision = lastModuleSpringJoint.enableCollision;
+                ballSpringJoint.connectedMassScale = lastModuleSpringJoint.connectedMassScale;
+                ballSpringJoint.massScale = lastModuleSpringJoint.massScale;
+                ballSpringJoint.enablePreprocessing = lastModuleSpringJoint.enablePreprocessing;
+            }
+        }
+    }
+
     private void OnMovementPerformed(InputAction.CallbackContext context) => movementInput = context.ReadValue<Vector2>();
     private void OnMovementCanceled(InputAction.CallbackContext context) => movementInput = Vector2.zero;
 } 
