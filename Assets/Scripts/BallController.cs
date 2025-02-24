@@ -6,6 +6,7 @@ using UnityEngine.InputSystem;
 
 public class BallController : MonoBehaviour
 {
+    [Header("Ball Movement Settings")]
     public float moveForce = 10f;
     public float maxSquishTime = 2f;
     public float jumpForce = 10f;
@@ -16,13 +17,14 @@ public class BallController : MonoBehaviour
     public float fallMultiplier = 2.5f;
     public float minJumpForce = 30f;
     public float maxJumpForce = 100f;
-    public float jumpFromObjectAdjuster = 0.8f;
+    public Vector3 originalScale;
 
-    public Transform currentPlatform;
+    private bool isFreeLooking = false;
+    public FreeLookCamera freeLookCamera;
+    
     private Rigidbody rb;
     private bool isChargingJump;
     private float squishStartTime;
-    public Vector3 originalScale;
     private BallInput ballInput;
     private Vector2 movementInput;
     private bool isRecoveringScale;
@@ -42,11 +44,12 @@ public class BallController : MonoBehaviour
     private void Awake()
     {
         Application.targetFrameRate = 60;
-        
         rb = GetComponent<Rigidbody>();
         rb.maxAngularVelocity = 100f;
         originalScale = transform.localScale;
         ballInput = new BallInput();
+
+        freeLookCamera.SetFreeLook += b => isFreeLooking = b;
 
         ballInput.PogoControls.Jump.started += OnJumpStarted;
         ballInput.PogoControls.Jump.canceled += OnJumpCanceled;
@@ -67,6 +70,77 @@ public class BallController : MonoBehaviour
         WaterEffects();
     }
 
+    private void HandleMovement()
+    {
+        if (isFreeLooking)
+        {
+            return;
+        }
+        
+        Vector3 direction = new Vector3(movementInput.x, 0f, movementInput.y).normalized;
+        if (direction.magnitude >= 0.1f)
+        {
+            Vector3 cameraForward = cameraTransform.forward;
+            cameraForward.y = 0f;
+            cameraForward.Normalize();
+
+            Vector3 cameraRight = cameraTransform.right;
+            cameraRight.y = 0f;
+            cameraRight.Normalize();
+
+            Vector3 moveDir = direction.z * cameraForward + direction.x * cameraRight;
+            Vector3 torqueAxis = Vector3.Cross(Vector3.up, moveDir);  
+            float controlFactor = IsGrounded() ? 1f : airControlFactor;
+            rb.AddTorque(torqueAxis * (moveForce * controlFactor), ForceMode.Impulse);
+        }
+    }
+    private void HandleScaleSquish()
+    {
+        if (isChargingJump)
+        {
+            float squishTime = Mathf.Clamp(Time.time - squishStartTime, 0, maxSquishTime);
+            float squishAmount = 1 - (squishTime / maxSquishTime) * (1 - squishFactor);
+            transform.localScale = originalScale * squishAmount;
+        }
+    }
+    private void HandleScaleRecovery()
+    {
+        if (isRecoveringScale)
+        {
+            transform.localScale = Vector3.Lerp(transform.localScale, originalScale, Time.deltaTime * scaleRecoverySpeed);
+            if (Vector3.Distance(transform.localScale, originalScale) < 0.01f)
+            {
+                transform.localScale = originalScale;
+                isRecoveringScale = false;
+            }
+        }
+    }
+    private void HandleAirborne()
+    {
+        if (!IsGrounded())
+        {
+            rb.velocity += Vector3.up * (Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime);
+        }
+    }
+    private void GetObjectBallStandingOn()
+    {
+        RaycastHit hit;
+        Vector3 rayOrigin = new Vector3(transform.position.x, transform.position.y, transform.position.z) - checkOrigin;
+        Vector3 rayDirection = Vector3.down;
+
+        // Draw a black debug ray in Scene View
+        Debug.DrawRay(rayOrigin, rayDirection * checkDistance, Color.black);
+
+        if (Physics.Raycast(rayOrigin, rayDirection, out hit, checkDistance, groundLayers))
+        {
+            previousSurfaceTag = currentSurfaceTag;
+            currentSurfaceTag = hit.collider.tag;
+        }
+        else
+        {
+            currentSurfaceTag = "Untagged";
+        }
+    }
     private void WaterEffects()
     {
         if (currentSurfaceTag == "Water" && previousSurfaceTag != "Water")
@@ -97,78 +171,7 @@ public class BallController : MonoBehaviour
             rollingInWater.Stop();
         }
     }
-
-    private void GetObjectBallStandingOn()
-    {
-        RaycastHit hit;
-        Vector3 rayOrigin = new Vector3(transform.position.x, transform.position.y, transform.position.z) - checkOrigin;
-        Vector3 rayDirection = Vector3.down;
-
-        // Draw a black debug ray in Scene View
-        Debug.DrawRay(rayOrigin, rayDirection * checkDistance, Color.black);
-
-        if (Physics.Raycast(rayOrigin, rayDirection, out hit, checkDistance, groundLayers))
-        {
-            previousSurfaceTag = currentSurfaceTag;
-            currentSurfaceTag = hit.collider.tag;
-        }
-        else
-        {
-            currentSurfaceTag = "Untagged";
-        }
-    }
-
-    private void HandleMovement()
-    {
-        Vector3 direction = new Vector3(movementInput.x, 0f, movementInput.y).normalized;
-        if (direction.magnitude >= 0.1f)
-        {
-            Vector3 cameraForward = cameraTransform.forward;
-            cameraForward.y = 0f;
-            cameraForward.Normalize();
-
-            Vector3 cameraRight = cameraTransform.right;
-            cameraRight.y = 0f;
-            cameraRight.Normalize();
-
-            Vector3 moveDir = direction.z * cameraForward + direction.x * cameraRight;
-            Vector3 torqueAxis = Vector3.Cross(Vector3.up, moveDir);  
-            float controlFactor = IsGrounded() ? 1f : airControlFactor;
-            rb.AddTorque(torqueAxis * (moveForce * controlFactor), ForceMode.Impulse);
-        }
-    }
-
-    private void HandleScaleSquish()
-    {
-        if (isChargingJump)
-        {
-            float squishTime = Mathf.Clamp(Time.time - squishStartTime, 0, maxSquishTime);
-            float squishAmount = 1 - (squishTime / maxSquishTime) * (1 - squishFactor);
-            transform.localScale = originalScale * squishAmount;
-        }
-    }
-
-    private void HandleScaleRecovery()
-    {
-        if (isRecoveringScale)
-        {
-            transform.localScale = Vector3.Lerp(transform.localScale, originalScale, Time.deltaTime * scaleRecoverySpeed);
-            if (Vector3.Distance(transform.localScale, originalScale) < 0.01f)
-            {
-                transform.localScale = originalScale;
-                isRecoveringScale = false;
-            }
-        }
-    }
-
-    private void HandleAirborne()
-    {
-        if (!IsGrounded())
-        {
-            rb.velocity += Vector3.up * (Physics.gravity.y * (fallMultiplier - 1) * Time.deltaTime);
-        }
-    }
-
+    
     private void Jump()
     {
         if (IsGrounded())
@@ -184,22 +187,9 @@ public class BallController : MonoBehaviour
             float appliedJumpForce = Mathf.Clamp(jumpForce * (squishTime / maxSquishTime), minJumpForce, maxJumpForce);
 
             Vector3 jumpDirection = combinedNormal * appliedJumpForce;
-
-            // Add platform velocity if on a moving platform
-            if (currentPlatform)
-            {
-                ObjectMovementController platformController = currentPlatform.GetComponent<ObjectMovementController>();
-                if (platformController != null)
-                {
-                    Vector3 jumpForceAdjuster = new Vector3(platformController.Velocity.x * jumpFromObjectAdjuster, platformController.Velocity.y, platformController.Velocity.z * jumpFromObjectAdjuster);
-                    jumpDirection += jumpForceAdjuster;
-                }
-            }
-
             rb.AddForce(jumpDirection, ForceMode.Impulse);
         }
     }
-    
     private bool IsGrounded()
     {
         groundHits.Clear();
@@ -230,14 +220,12 @@ public class BallController : MonoBehaviour
 
         return groundHits.Count > 0;
     }
-
-
+    
     private void OnJumpStarted(InputAction.CallbackContext context)
     {
         isChargingJump = true;
         squishStartTime = Time.time;
     }
-
     private void OnJumpCanceled(InputAction.CallbackContext context)
     {
         if (isChargingJump)
@@ -248,10 +236,8 @@ public class BallController : MonoBehaviour
             }
             isChargingJump = false;
             isRecoveringScale = true;
-            currentPlatform = null;
         }
     }
-    
     private void OnMovementPerformed(InputAction.CallbackContext context) => movementInput = context.ReadValue<Vector2>();
     private void OnMovementCanceled(InputAction.CallbackContext context) => movementInput = Vector2.zero;
 } 

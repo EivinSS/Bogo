@@ -3,51 +3,83 @@ using UnityEngine;
 
 public class ObjectMoverRb : MonoBehaviour
 {
-    public List<Transform> points = new List<Transform>();  // List of Transforms for the cube to move to
-    public bool loop = true;  // Set to true for looping, false for reverse movement
-    public float moveSpeed = 5f;  // Speed of movement
-    private int currentTargetIndex = 0;  // Index of the current target point
+    public enum ActionType { MoveToPoint }
+
+    [System.Serializable]
+    public class MovementAction
+    {
+        public ActionType actionType;
+        public Transform targetPoint; // Used for MoveToPoint
+    }
+
+    public List<MovementAction> actions = new List<MovementAction>();
+    public bool reverseAtEnd = false;
+    public float moveSpeed = 5f;
+
+    private int currentActionIndex = 0;
+    private bool reversing = false;
     private Rigidbody rb;
 
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
-        if (points.Count > 0)
+        if (actions.Count > 0 && actions[0].actionType == ActionType.MoveToPoint)
         {
-            transform.position = points[0].position;  // Start at the first point
+            transform.position = actions[0].targetPoint.position;
         }
     }
 
     private void Update()
     {
-        if (points.Count > 1) // Ensure there are at least two points to move between
+        if (actions.Count > 0)
         {
-            MoveCube();
+            PerformAction(actions[currentActionIndex]);
         }
     }
 
-    private void MoveCube()
+    private void PerformAction(MovementAction action)
     {
-        // Move towards the current target point
-        Vector3 target = points[currentTargetIndex].position;  // Get the position from the Transform
-        Vector3 direction = (target - transform.position).normalized;
-        rb.MovePosition(transform.position + direction * moveSpeed * Time.deltaTime);
-
-        // Check if the cube has reached the current target
-        if (Vector3.Distance(transform.position, target) < 0.1f)
+        if (action.actionType == ActionType.MoveToPoint)
         {
-            // Check whether to reverse or loop
-            if (loop)
+            MoveToPoint(action.targetPoint.position);
+        }
+    }
+
+    public void MoveToPoint(Vector3 target)
+    {
+        Vector3 direction = (target - transform.position).normalized;
+        rb.MovePosition(transform.position + direction * (moveSpeed * Time.deltaTime));
+
+        if (Vector3.Distance(transform.position, target) < 1f)
+        {
+            GoToNextAction();
+        }
+    }
+
+    private void GoToNextAction()
+    {
+        if (reversing)
+        {
+            currentActionIndex--;
+            if (currentActionIndex < 0)
             {
-                currentTargetIndex = (currentTargetIndex + 1) % points.Count;
+                reversing = false;
+                currentActionIndex = 1;
             }
-            else
+        }
+        else
+        {
+            currentActionIndex++;
+            if (currentActionIndex >= actions.Count)
             {
-                if (currentTargetIndex == points.Count - 1 || currentTargetIndex == 0)
+                if (reverseAtEnd)
                 {
-                    // Reverse direction
-                    points.Reverse();
-                    currentTargetIndex = 0;
+                    reversing = true;
+                    currentActionIndex = actions.Count - 2;
+                }
+                else
+                {
+                    currentActionIndex = 0; // Move back to first action naturally
                 }
             }
         }

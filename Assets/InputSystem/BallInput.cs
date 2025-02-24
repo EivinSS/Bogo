@@ -44,6 +44,24 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""MouseDelta"",
+                    ""type"": ""Value"",
+                    ""id"": ""5fbe6a07-6ace-422e-9d33-c9a4b2a665ee"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""ToggleFreeLook"",
+                    ""type"": ""Button"",
+                    ""id"": ""914234b0-f4af-4f93-99e3-39c7d255114f"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -123,6 +141,28 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
                     ""action"": ""Move"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""bd0e6d0e-25d2-4c00-9281-dcd51c269535"",
+                    ""path"": ""<Mouse>/delta"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""MouseDelta"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2b97af9e-d93b-4cc6-b097-3a97e488cecb"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ToggleFreeLook"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -133,6 +173,8 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
         m_PogoControls = asset.FindActionMap("PogoControls", throwIfNotFound: true);
         m_PogoControls_Move = m_PogoControls.FindAction("Move", throwIfNotFound: true);
         m_PogoControls_Jump = m_PogoControls.FindAction("Jump", throwIfNotFound: true);
+        m_PogoControls_MouseDelta = m_PogoControls.FindAction("MouseDelta", throwIfNotFound: true);
+        m_PogoControls_ToggleFreeLook = m_PogoControls.FindAction("ToggleFreeLook", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -196,12 +238,16 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
     private List<IPogoControlsActions> m_PogoControlsActionsCallbackInterfaces = new List<IPogoControlsActions>();
     private readonly InputAction m_PogoControls_Move;
     private readonly InputAction m_PogoControls_Jump;
+    private readonly InputAction m_PogoControls_MouseDelta;
+    private readonly InputAction m_PogoControls_ToggleFreeLook;
     public struct PogoControlsActions
     {
         private @BallInput m_Wrapper;
         public PogoControlsActions(@BallInput wrapper) { m_Wrapper = wrapper; }
         public InputAction @Move => m_Wrapper.m_PogoControls_Move;
         public InputAction @Jump => m_Wrapper.m_PogoControls_Jump;
+        public InputAction @MouseDelta => m_Wrapper.m_PogoControls_MouseDelta;
+        public InputAction @ToggleFreeLook => m_Wrapper.m_PogoControls_ToggleFreeLook;
         public InputActionMap Get() { return m_Wrapper.m_PogoControls; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -217,6 +263,12 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
             @Jump.started += instance.OnJump;
             @Jump.performed += instance.OnJump;
             @Jump.canceled += instance.OnJump;
+            @MouseDelta.started += instance.OnMouseDelta;
+            @MouseDelta.performed += instance.OnMouseDelta;
+            @MouseDelta.canceled += instance.OnMouseDelta;
+            @ToggleFreeLook.started += instance.OnToggleFreeLook;
+            @ToggleFreeLook.performed += instance.OnToggleFreeLook;
+            @ToggleFreeLook.canceled += instance.OnToggleFreeLook;
         }
 
         private void UnregisterCallbacks(IPogoControlsActions instance)
@@ -227,6 +279,12 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
             @Jump.started -= instance.OnJump;
             @Jump.performed -= instance.OnJump;
             @Jump.canceled -= instance.OnJump;
+            @MouseDelta.started -= instance.OnMouseDelta;
+            @MouseDelta.performed -= instance.OnMouseDelta;
+            @MouseDelta.canceled -= instance.OnMouseDelta;
+            @ToggleFreeLook.started -= instance.OnToggleFreeLook;
+            @ToggleFreeLook.performed -= instance.OnToggleFreeLook;
+            @ToggleFreeLook.canceled -= instance.OnToggleFreeLook;
         }
 
         public void RemoveCallbacks(IPogoControlsActions instance)
@@ -248,5 +306,7 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
     {
         void OnMove(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
+        void OnMouseDelta(InputAction.CallbackContext context);
+        void OnToggleFreeLook(InputAction.CallbackContext context);
     }
 }
