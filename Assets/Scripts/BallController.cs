@@ -17,6 +17,7 @@ public class BallController : MonoBehaviour
     public float maxJumpForce = 100f;
     public Vector3 originalScale;
     public float ropeHangForce = 10f;
+    public float jumpRadiusFromCenter = 10f;
 
     private bool isFreeLooking = false;
     public FreeLookCamera freeLookCamera;
@@ -247,7 +248,7 @@ public class BallController : MonoBehaviour
     {
         groundHits.Clear();
         int rayCount = 40; // Antall stråler
-        float radius = 3f;
+        float radius = jumpRadiusFromCenter;
 
         // Fibonacci-sfærisk fordeling for jevnt fordelte punkter på en kule
         for (int i = 0; i < rayCount; i++)
