@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -47,6 +48,8 @@ public class BallController : MonoBehaviour
     public ParticleSystem enterWater3;
     
     public ParticleSystem rollingInWater;
+    
+    private Vector3 initialPosition;
 
     private void Awake()
     {
@@ -56,12 +59,17 @@ public class BallController : MonoBehaviour
         originalScale = transform.localScale;
         ballInput = new BallInput();
 
-        freeLookCamera.SetFreeLook += b => isFreeLooking = b;
-
         ballInput.PogoControls.Jump.started += OnJumpStarted;
         ballInput.PogoControls.Jump.canceled += OnJumpCanceled;
         ballInput.PogoControls.Move.performed += OnMovementPerformed;
         ballInput.PogoControls.Move.canceled += OnMovementCanceled;
+        ballInput.PogoControls.Restart.canceled += OnRestart;
+    }
+
+    private void Start()
+    {
+        freeLookCamera.SetFreeLook += b => isFreeLooking = b;
+        initialPosition = transform.position;
     }
 
     private void OnEnable() => ballInput.Enable();
@@ -305,6 +313,12 @@ public class BallController : MonoBehaviour
             isChargingJump = false;
             isRecoveringScale = true;
         }
+    }
+    private void OnRestart(InputAction.CallbackContext context)
+    {
+        rb.velocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        rb.position = initialPosition;
     }
 
     private void OnTriggerEnter(Collider other)

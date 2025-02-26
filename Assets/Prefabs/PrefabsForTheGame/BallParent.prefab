@@ -129,22 +129,6 @@ PrefabInstance:
       value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 4952007279171305278, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-      propertyPath: enterWater
-      value: 
-      objectReference: {fileID: 1952560603407351452}
-    - target: {fileID: 4952007279171305278, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-      propertyPath: enterWater2
-      value: 
-      objectReference: {fileID: 7708706344423315235}
-    - target: {fileID: 4952007279171305278, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-      propertyPath: enterWater3
-      value: 
-      objectReference: {fileID: 2237679996313511469}
-    - target: {fileID: 4952007279171305278, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-      propertyPath: rollingInWater
-      value: 
-      objectReference: {fileID: 6884317433905364158}
-    - target: {fileID: 4952007279171305278, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
       propertyPath: groundLayer.m_Bits
       value: 88
       objectReference: {fileID: 0}
@@ -181,26 +165,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
---- !u!198 &1952560603407351452 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 6506125696909814868, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-  m_PrefabInstance: {fileID: 4706971206389977800}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &2237679996313511469 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 6800245524371764453, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-  m_PrefabInstance: {fileID: 4706971206389977800}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &6884317433905364158 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 2222675283501706870, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-  m_PrefabInstance: {fileID: 4706971206389977800}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &7708706344423315235 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 3145859775199905259, guid: c17cc213a8a2010499538d6b007166f7, type: 3}
-  m_PrefabInstance: {fileID: 4706971206389977800}
-  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8513098133943908402 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3996413577913805562, guid: c17cc213a8a2010499538d6b007166f7, type: 3}

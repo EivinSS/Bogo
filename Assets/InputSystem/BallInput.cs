@@ -62,6 +62,15 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Restart"",
+                    ""type"": ""Button"",
+                    ""id"": ""c412008a-ed72-4a85-b6ac-53abcd6e2d11"",
+                    ""expectedControlType"": ""Button"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -163,6 +172,17 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
                     ""action"": ""ToggleFreeLook"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""2fb3bcde-95c5-4d24-8539-1141ac47f5ae"",
+                    ""path"": ""<Keyboard>/r"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Restart"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -175,6 +195,7 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
         m_PogoControls_Jump = m_PogoControls.FindAction("Jump", throwIfNotFound: true);
         m_PogoControls_MouseDelta = m_PogoControls.FindAction("MouseDelta", throwIfNotFound: true);
         m_PogoControls_ToggleFreeLook = m_PogoControls.FindAction("ToggleFreeLook", throwIfNotFound: true);
+        m_PogoControls_Restart = m_PogoControls.FindAction("Restart", throwIfNotFound: true);
     }
 
     public void Dispose()
@@ -240,6 +261,7 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
     private readonly InputAction m_PogoControls_Jump;
     private readonly InputAction m_PogoControls_MouseDelta;
     private readonly InputAction m_PogoControls_ToggleFreeLook;
+    private readonly InputAction m_PogoControls_Restart;
     public struct PogoControlsActions
     {
         private @BallInput m_Wrapper;
@@ -248,6 +270,7 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
         public InputAction @Jump => m_Wrapper.m_PogoControls_Jump;
         public InputAction @MouseDelta => m_Wrapper.m_PogoControls_MouseDelta;
         public InputAction @ToggleFreeLook => m_Wrapper.m_PogoControls_ToggleFreeLook;
+        public InputAction @Restart => m_Wrapper.m_PogoControls_Restart;
         public InputActionMap Get() { return m_Wrapper.m_PogoControls; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -269,6 +292,9 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
             @ToggleFreeLook.started += instance.OnToggleFreeLook;
             @ToggleFreeLook.performed += instance.OnToggleFreeLook;
             @ToggleFreeLook.canceled += instance.OnToggleFreeLook;
+            @Restart.started += instance.OnRestart;
+            @Restart.performed += instance.OnRestart;
+            @Restart.canceled += instance.OnRestart;
         }
 
         private void UnregisterCallbacks(IPogoControlsActions instance)
@@ -285,6 +311,9 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
             @ToggleFreeLook.started -= instance.OnToggleFreeLook;
             @ToggleFreeLook.performed -= instance.OnToggleFreeLook;
             @ToggleFreeLook.canceled -= instance.OnToggleFreeLook;
+            @Restart.started -= instance.OnRestart;
+            @Restart.performed -= instance.OnRestart;
+            @Restart.canceled -= instance.OnRestart;
         }
 
         public void RemoveCallbacks(IPogoControlsActions instance)
@@ -308,5 +337,6 @@ public partial class @BallInput: IInputActionCollection2, IDisposable
         void OnJump(InputAction.CallbackContext context);
         void OnMouseDelta(InputAction.CallbackContext context);
         void OnToggleFreeLook(InputAction.CallbackContext context);
+        void OnRestart(InputAction.CallbackContext context);
     }
 }
