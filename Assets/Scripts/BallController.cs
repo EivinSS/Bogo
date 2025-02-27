@@ -249,6 +249,7 @@ public class BallController : MonoBehaviour
             float appliedJumpForce = Mathf.Clamp(jumpForce * (squishTime / maxSquishTime), minJumpForce, maxJumpForce);
 
             Vector3 jumpDirection = combinedNormal * appliedJumpForce;
+            rb.velocity = new Vector3(rb.velocity.x, 0f, rb.velocity.z);
             rb.AddForce(jumpDirection, ForceMode.Impulse);
         }
     }

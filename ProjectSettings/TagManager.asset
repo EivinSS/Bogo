@@ -7,6 +7,7 @@ TagManager:
   - Water
   - Terrain
   - LastRopeModule
+  - Blocks
   layers:
   - Default
   - TransparentFX
@@ -19,7 +20,7 @@ TagManager:
   - Suimono_Water
   - Suimono_Depth
   - Suimono_Screen
-  - 
+  - Blocks
   - 
   - 
   - 
