@@ -51,6 +51,14 @@ public class BallController : MonoBehaviour
     
     private Vector3 initialPosition;
 
+    [Header("World Colliders")] 
+    public LayerMask objectLayer;
+    private Collider[] initialCollidersResults;
+    private const int InitialArraySize = 500; // Start with a reasonable size
+    private const int MaxArraySize = 100000; 
+    public float deactivationRangeStart = 1000f;
+    public float activationRange = 10f;
+
     private void Awake()
     {
         Application.targetFrameRate = 60;
@@ -70,6 +78,50 @@ public class BallController : MonoBehaviour
     {
         freeLookCamera.SetFreeLook += b => isFreeLooking = b;
         initialPosition = transform.position;
+        
+        // Colliders
+        initialCollidersResults = new Collider[InitialArraySize];
+        //DisableCollidersInRange(deactivationRangeStart);
+    }
+    
+    void DisableCollidersInRange(float range)
+    {
+        int numColliders;
+        bool arrayWasResized;
+
+        do
+        {
+            // Perform the overlap check
+            numColliders = Physics.OverlapSphereNonAlloc(transform.position, range, initialCollidersResults, objectLayer);
+
+            // Check if the array was full
+            arrayWasResized = false;
+            if (numColliders == initialCollidersResults.Length)
+            {
+                // Double the array size
+                int newSize = initialCollidersResults.Length * 2;
+                Debug.Log("Doubling to size " + newSize);
+
+                // Check if the new size exceeds the maximum limit
+                if (newSize > MaxArraySize)
+                {
+                    Debug.LogError($"Max array size ({MaxArraySize}) exceeded. Unable to handle all colliders.");
+                    break;
+                }
+
+                Array.Resize(ref initialCollidersResults, newSize);
+                arrayWasResized = true;
+                Debug.LogWarning($"Resized results array to {newSize}");
+            }
+        }
+        while (arrayWasResized); // Repeat if the array was resized
+
+        // Disable colliders
+        for (int i = 0; i < numColliders; i++)
+        {
+            initialCollidersResults[i].enabled = false;
+            Debug.Log(initialCollidersResults[i].name);
+        }
     }
 
     private void OnEnable() => ballInput.Enable();
@@ -112,7 +164,6 @@ public class BallController : MonoBehaviour
             rb.AddTorque(torqueAxis * (moveForce * controlFactor), ForceMode.Impulse);
         }
     }
-
     private void HandleRopeMovement()
     {
         if (isFreeLooking)
@@ -358,6 +409,22 @@ public class BallController : MonoBehaviour
         }
     }
 
+    private void OnTriggerExit(Collider other)
+    {
+        
+    }
+
     private void OnMovementPerformed(InputAction.CallbackContext context) => movementInput = context.ReadValue<Vector2>();
     private void OnMovementCanceled(InputAction.CallbackContext context) => movementInput = Vector2.zero;
+    
+    private void OnDrawGizmosSelected()
+    {
+        // Draw the activation range (yellow)
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, activationRange);
+
+        // Draw the deactivation range (red)
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, 1000f); // Adjust the radius to match your deactivation range
+    }
 } 
